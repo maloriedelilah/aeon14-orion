@@ -1,0 +1,10 @@
+---
+// Tiny component: renders a graph/object into a <script type="application/ld+json"> tag.
+// Never HTML-escape the JSON — schema.org payloads are not HTML and escaping would
+// corrupt string content (e.g. quotes in a book description).
+interface Props {
+  graph: unknown;
+}
+const { graph } = Astro.props as Props;
+---
+<script type="application/ld+json" set:html={JSON.stringify(graph, null, 2)} />

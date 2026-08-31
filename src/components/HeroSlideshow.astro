@@ -1,0 +1,126 @@
+---
+// Homepage hero: the site's most recently RELEASED book, followed by one
+// slide per upcoming (preorder) book, soonest release first. Slide 0 is
+// always what a no-JS visitor sees (plain <article>, no hiding needed
+// beyond the base .hero-slide CSS rule) — the rotation/arrows/dots below are
+// pure progressive enhancement.
+//
+// "Preorder" here is never a separate flag the caller decides — the caller
+// (index.astro) derives it from isFutureRelease(book.datePublished), same
+// single source of truth used by jsonld.ts's Offer.availability and the
+// PRE-ORDER badge on series listings, so this can't silently disagree with
+// either of those.
+interface Slide {
+  kind: 'latest' | 'comingSoon';
+  slug: string;
+  title: string;
+  cover: string;
+  description?: string;
+  releaseDate: string; // pre-formatted (see lib/date.ts formatDate) — this
+                        // component only displays, never parses/derives dates.
+}
+
+interface Props {
+  slides: Slide[];
+  intervalSeconds?: number;
+}
+const { slides, intervalSeconds = 7 } = Astro.props as Props;
+---
+{slides.length > 0 && (
+  <section class="hero-slideshow" aria-label="Featured" data-interval-ms={intervalSeconds * 1000}>
+    <div class="hero-slides">
+      {slides.map((s, i) => (
+        <article
+          class={`card book-card hero-slide${i === 0 ? ' is-active' : ''}`}
+          data-slide-index={i}
+          aria-hidden={i === 0 ? 'false' : 'true'}
+        >
+          <a class="cover-link" href={`/books/${s.slug}`} aria-hidden="true" tabindex="-1">
+            <img class="cover" src={s.cover} alt={`Cover of ${s.title}`} />
+          </a>
+          <div class="book-card-body">
+            <p class="hero-eyebrow">{s.kind === 'latest' ? 'Latest release' : 'Coming soon'}</p>
+            <h2>
+              <a href={`/books/${s.slug}`}>{s.title}</a>
+              {s.kind === 'comingSoon' && <>{' '}<span class="preorder-badge">Pre-order</span></>}
+            </h2>
+            <p class="release-date">{s.kind === 'comingSoon' ? 'Releases' : 'Released'} {s.releaseDate}</p>
+            {s.description && <p>{s.description}</p>}
+            <p><a href={`/books/${s.slug}`}>Learn more &rarr;</a></p>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    {slides.length > 1 && (
+      <>
+        <button type="button" class="hero-arrow hero-arrow-prev" aria-label="Previous slide">&#8249;</button>
+        <button type="button" class="hero-arrow hero-arrow-next" aria-label="Next slide">&#8250;</button>
+        <div class="hero-dots" role="tablist" aria-label="Slides">
+          {slides.map((_, i) => (
+            <button
+              type="button"
+              class={`hero-dot${i === 0 ? ' is-active' : ''}`}
+              data-dot-index={i}
+              role="tab"
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-label={`Go to slide ${i + 1}`}
+            ></button>
+          ))}
+        </div>
+      </>
+    )}
+  </section>
+)}
+
+<script>
+  // Progressive enhancement only. With JS disabled, slide 0 (rendered with
+  // .is-active in the markup above) is the only thing shown — nothing here
+  // is required for a correct, working page.
+  document.querySelectorAll<HTMLElement>('.hero-slideshow').forEach((root) => {
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('.hero-slide'));
+    const dots = Array.from(root.querySelectorAll<HTMLElement>('.hero-dot'));
+    if (slides.length < 2) return; // nothing to rotate or page through
+
+    const intervalMs = Number(root.dataset.intervalMs) || 7000;
+    let current = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    function show(index: number) {
+      current = ((index % slides.length) + slides.length) % slides.length;
+      slides.forEach((slide, i) => {
+        const active = i === current;
+        slide.classList.toggle('is-active', active);
+        slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      dots.forEach((dot, i) => {
+        const active = i === current;
+        dot.classList.toggle('is-active', active);
+        dot.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
+
+    function stop() {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+    }
+    function start() {
+      stop();
+      timer = setInterval(() => show(current + 1), intervalMs);
+    }
+
+    root.querySelector('.hero-arrow-prev')?.addEventListener('click', () => { show(current - 1); start(); });
+    root.querySelector('.hero-arrow-next')?.addEventListener('click', () => { show(current + 1); start(); });
+    dots.forEach((dot, i) => dot.addEventListener('click', () => { show(i); start(); }));
+
+    // Pause on hover AND on keyboard focus (accessibility parity — a
+    // keyboard user tabbing to an arrow/dot shouldn't have the slide flip
+    // out from under them mid-interaction).
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+    root.addEventListener('focusin', stop);
+    root.addEventListener('focusout', start);
+
+    start();
+  });
+</script>

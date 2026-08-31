@@ -1,0 +1,32 @@
+---
+// Site header: brand (logo image if configured, else the primary author's
+// name as a text wordmark, linking home) + nav from siteConfig.nav. Layout
+// ('left' brand-left/nav-right, or 'centered' brand-then-nav-stacked) comes
+// from siteConfig.header.layout. Pure chrome — emits no JSON-LD of its own
+// (that's Base.astro's job for the WebSite node); this is presentation only.
+import { siteConfig } from '../config';
+
+interface Props {
+  authorName: string;
+}
+const { authorName } = Astro.props as Props;
+const { logo, layout } = siteConfig.header;
+---
+<header class={`site-header site-header--${layout}`}>
+  <div class="wrap">
+    <a class="brand" href="/">
+      {logo.src ? (
+        <img class="brand-logo" src={logo.src} alt={logo.alt ?? authorName} />
+      ) : (
+        <span class="wordmark">{authorName}</span>
+      )}
+    </a>
+    {siteConfig.nav.length > 0 && (
+      <nav class="site-nav" aria-label="Primary">
+        {siteConfig.nav.map((item) => (
+          <a href={item.href}>{item.label}</a>
+        ))}
+      </nav>
+    )}
+  </div>
+</header>

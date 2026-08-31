@@ -1,0 +1,66 @@
+---
+// Homepage "Series" section: title/description card per series plus a
+// decorative overlapping cover-fan (up to 3 covers) for each. Lives in
+// src/components/ so it's reachable through the @theme alias -- an
+// implementer overrides it by dropping src/overrides/components/SeriesTeaser.astro
+// (see THEMING.md Tier 2), instead of editing src/pages/index.astro directly
+// (Tier 3 pages stay data-fetch + composition only, per the page contract).
+//
+// Extracted verbatim from index.astro (no behavior/markup change) -- the
+// `isUpcoming` flag is precomputed by the caller (index.astro already knows
+// `now` and calls lib/date.ts's isFutureRelease) so this component stays a
+// pure presentation layer with no date logic of its own.
+//
+// Renders nothing at all when there are no series -- safe to call
+// unconditionally from index.astro, same pattern as ComingSoonRow.astro.
+interface SeriesTeaserBook {
+  slug: string;
+  title: string;
+  cover: string;
+  isUpcoming: boolean;
+}
+
+interface SeriesTeaserEntry {
+  series: { slug: string; name: string; description: string };
+  books: SeriesTeaserBook[];
+}
+
+interface Props {
+  entries: SeriesTeaserEntry[];
+}
+
+const { entries } = Astro.props as Props;
+---
+{entries.length > 0 && (
+  <section aria-label="Series">
+    <h2>Series</h2>
+    {entries.map(({ series, books: memberBooks }) => (
+      <article class="card series-card">
+        <div class="series-card-body">
+          <h3><a href={`/series/${series.slug}`}>{series.name}</a></h3>
+          <p class="series-description">{series.description}</p>
+          <ul>
+            {memberBooks.map((b) => (
+              <li>
+                <a href={`/books/${b.slug}`}>{b.title}</a>
+                {b.isUpcoming && <>{' '}<span class="preorder-badge">Pre-order</span></>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        {memberBooks.length > 0 && (
+          <div class="series-covers-stack" aria-hidden="true">
+            {memberBooks.slice(0, 3).map((b, i) => (
+              <img
+                class="stacked-cover"
+                style={`z-index: ${3 - i};`}
+                src={b.cover}
+                alt={`Cover of ${b.title}`}
+              />
+            ))}
+          </div>
+        )}
+      </article>
+    ))}
+  </section>
+)}

@@ -1,0 +1,71 @@
+---
+// Homepage "Coming soon" section: a horizontal row of every upcoming
+// (preorder) book's cover, title, series/Book #, and release date — sits
+// above the Series section. Native horizontal scroll (overflow-x) works with
+// zero JS on touch/trackpad; the prev/next arrow buttons are a progressive
+// enhancement that only reveal themselves once the script below confirms the
+// row is actually overflowing (see updateArrows in the script).
+//
+// Renders nothing at all when there's nothing upcoming — safe to call
+// unconditionally from index.astro.
+interface ComingSoonBook {
+  slug: string;
+  title: string;
+  cover: string;
+  releaseDate: string; // pre-formatted, see lib/date.ts formatDate
+  seriesName?: string;
+  seriesSlug?: string;
+  seriesPosition?: number;
+}
+
+interface Props {
+  books: ComingSoonBook[];
+}
+const { books } = Astro.props as Props;
+---
+{books.length > 0 && (
+  <section class="coming-soon" aria-label="Coming soon">
+    <h2>Coming soon</h2>
+    <div class="coming-soon-viewport">
+      <button type="button" class="coming-soon-arrow coming-soon-arrow-prev" aria-label="Scroll left" hidden>&#8249;</button>
+      <ul class="coming-soon-row">
+        {books.map((b) => (
+          <li class="coming-soon-item">
+            <a class="cover-link" href={`/books/${b.slug}`} aria-hidden="true" tabindex="-1">
+              <img class="coming-soon-cover" src={b.cover} alt={`Cover of ${b.title}`} />
+            </a>
+            <h3><a href={`/books/${b.slug}`}>{b.title}</a></h3>
+            {b.seriesName && b.seriesSlug && b.seriesPosition != null && (
+              <p class="book-number">Book {b.seriesPosition} of <a href={`/series/${b.seriesSlug}`}>{b.seriesName}</a></p>
+            )}
+            <p class="release-date">Releases {b.releaseDate}</p>
+          </li>
+        ))}
+      </ul>
+      <button type="button" class="coming-soon-arrow coming-soon-arrow-next" aria-label="Scroll right" hidden>&#8250;</button>
+    </div>
+  </section>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('.coming-soon-viewport').forEach((viewport) => {
+    const row = viewport.querySelector<HTMLElement>('.coming-soon-row');
+    const prev = viewport.querySelector<HTMLButtonElement>('.coming-soon-arrow-prev');
+    const next = viewport.querySelector<HTMLButtonElement>('.coming-soon-arrow-next');
+    if (!row || !prev || !next) return;
+
+    const scrollAmount = () => Math.round(viewport.clientWidth * 0.8);
+    prev.addEventListener('click', () => row.scrollBy({ left: -scrollAmount(), behavior: 'smooth' }));
+    next.addEventListener('click', () => row.scrollBy({ left: scrollAmount(), behavior: 'smooth' }));
+
+    function updateArrows() {
+      const overflowing = row!.scrollWidth > row!.clientWidth + 4;
+      prev!.hidden = !overflowing || row!.scrollLeft <= 4;
+      next!.hidden = !overflowing || row!.scrollLeft >= row!.scrollWidth - row!.clientWidth - 4;
+    }
+
+    row.addEventListener('scroll', updateArrows);
+    window.addEventListener('resize', updateArrows);
+    updateArrows();
+  });
+</script>

@@ -1,0 +1,85 @@
+---
+// Lead-capture form. POSTs to /api/subscribe (src/pages/api/subscribe.ts).
+// Progressive-enhancement friendly: a plain <form method="post"> works with zero
+// JS (the browser navigates to the JSON response, which is ugly but functional);
+// the inline script below is purely an enhancement that AJAX-submits instead and
+// shows an inline status message. Single-vs-double opt-in is an ESP/config
+// concern (siteConfig.leads.doubleOptIn) — this component doesn't branch on it.
+//
+// Honeypot: a hidden "hp_check" field. Real users never see or fill it
+// (it's visually hidden + tabindex="-1" + excluded from autofill);
+// subscribe.ts already checks for it and silently 204s bots that do fill
+// it in. Field name is deliberately non-semantic — an earlier version used
+// "company" with a "Company" label, which Chrome's autofill heuristics
+// match on and will silently fill from a saved business profile even with
+// autocomplete="off" set, defeating the honeypot for real visitors (see
+// contact.ts's fuller writeup of the same bug on the contact form).
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description } = Astro.props as Props;
+---
+<form class="subscribe-form" method="post" action="/api/subscribe">
+  {title && <h2>{title}</h2>}
+  {description && <p>{description}</p>}
+
+  <p class="subscribe-form__hp" aria-hidden="true">
+    <label>
+      Leave this field blank
+      <input type="text" name="hp_check" tabindex="-1" autocomplete="off" />
+    </label>
+  </p>
+
+  <label>
+    Name
+    <input type="text" name="name" autocomplete="name" />
+  </label>
+
+  <label>
+    Email
+    <input type="email" name="email" required autocomplete="email" />
+  </label>
+
+  <button type="submit">Subscribe</button>
+
+  <p class="subscribe-form__status" role="status" hidden></p>
+</form>
+
+<style>
+  .subscribe-form__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  // Progressive enhancement only — see the frontmatter comment above. If this
+  // script never runs (JS disabled/blocked), the <form> above still submits.
+  document.querySelectorAll<HTMLFormElement>('form.subscribe-form').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const status = form.querySelector<HTMLElement>('.subscribe-form__status');
+      const setStatus = (msg: string) => {
+        if (!status) return;
+        status.hidden = false;
+        status.textContent = msg;
+      };
+      try {
+        const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          form.reset();
+          setStatus("Thanks — you're subscribed!");
+        } else {
+          setStatus('Something went wrong — please try again.');
+        }
+      } catch {
+        setStatus('Something went wrong — please try again.');
+      }
+    });
+  });
+</script>

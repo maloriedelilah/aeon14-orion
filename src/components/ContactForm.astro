@@ -1,0 +1,105 @@
+---
+// Contact form. POSTs to /api/contact (Tier 2 — see README "Contact form"
+// section). Mirrors SubscribeForm's shape on purpose: progressive-
+// enhancement friendly (plain <form method="post"> works with zero JS),
+// honeypot anti-spam field, inline AJAX status message as enhancement.
+//
+// Deliberately does NOT render the author's real email address anywhere in
+// the markup — the destination inbox is a Cloudflare secret consumed by the
+// Tier-2 endpoint only, never committed to the repo or shipped to the browser.
+// This is the point: nothing here is scrapeable by spam harvesters.
+//
+// Turnstile: TURNSTILE_SITE_KEY (see .env.example) is NOT secret — it's
+// meant to be visible in page source, same as reCAPTCHA's site key. It's
+// read here in frontmatter (server/build-time only, never in a client
+// <script>), so it doesn't need Astro's client-exposing `PUBLIC_` prefix —
+// this file just embeds the resulting value as a `data-sitekey` attribute.
+// Failing loud on it being unset rather than quietly rendering a form with
+// no widget: a missing key here means /api/contact's Turnstile check will
+// reject every real submission too, so this is worth catching at build
+// time, not discovering after a visitor's message silently vanishes.
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description } = Astro.props as Props;
+
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY;
+if (!turnstileSiteKey) {
+  throw new Error(
+    'ContactForm.astro: TURNSTILE_SITE_KEY is unset — set it (a public site key, not a secret) so the spam-check widget has something to render.'
+  );
+}
+---
+<form class="contact-form" method="post" action="/api/contact">
+  {title && <h2>{title}</h2>}
+  {description && <p>{description}</p>}
+
+  <p class="contact-form__hp" aria-hidden="true">
+    <label>
+      Leave this field blank
+      <input type="text" name="hp_check" tabindex="-1" autocomplete="off" />
+    </label>
+  </p>
+
+  <label>
+    Name
+    <input type="text" name="name" required autocomplete="name" />
+  </label>
+
+  <label>
+    Email
+    <input type="email" name="email" required autocomplete="email" />
+  </label>
+
+  <label>
+    Message
+    <textarea name="message" required rows="6"></textarea>
+  </label>
+
+  <div class="cf-turnstile" data-sitekey={turnstileSiteKey}></div>
+
+  <button type="submit">Send</button>
+
+  <p class="contact-form__status" role="status" hidden></p>
+</form>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+  .contact-form__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  // Progressive enhancement only — see the frontmatter comment above. If this
+  // script never runs (JS disabled/blocked), the <form> above still submits.
+  document.querySelectorAll<HTMLFormElement>('form.contact-form').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const status = form.querySelector<HTMLElement>('.contact-form__status');
+      const setStatus = (msg: string) => {
+        if (!status) return;
+        status.hidden = false;
+        status.textContent = msg;
+      };
+      try {
+        const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          form.reset();
+          setStatus("Thanks — message sent!");
+        } else {
+          setStatus('Something went wrong — please try again.');
+        }
+      } catch {
+        setStatus('Something went wrong — please try again.');
+      }
+    });
+  });
+</script>

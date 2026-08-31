@@ -1,0 +1,27 @@
+---
+// Shared "comparable titles" block — rendered INLINE on book/series/hub pages.
+// Per locked product decision: comps are NEVER their own route/page. They are
+// display-only text (title/author/hook) and contribute NO JSON-LD entity of
+// their own — the descriptive `hook` already lives as plain page content, per
+// the `comp` schema in content.config.ts. Extracted from books/[slug].astro,
+// which originally inlined this same markup, so series/[slug].astro and
+// themes/[slug].astro can share it too instead of re-duplicating it.
+import type { Comp } from '../lib/ContentSource';
+
+interface Props {
+  comps: Comp[];
+  title?: string;
+  class?: string;
+}
+const { comps, title = 'If you like...', class: className = 'comps-section' } = Astro.props as Props;
+---
+{comps.length > 0 && (
+  <section aria-label={title} class={className}>
+    <h2>{title}</h2>
+    <ul>
+      {comps.map((c) => (
+        <li><strong>{c.name}</strong>: {c.hook}</li>
+      ))}
+    </ul>
+  </section>
+)}

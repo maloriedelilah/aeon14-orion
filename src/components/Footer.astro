@@ -1,0 +1,49 @@
+---
+// Site footer: copyright (auto year + author name), optional tagline, legal
+// links (Privacy/Terms are always linked — they ship with the engine), any
+// extra siteConfig.footer.links, and the author's sameAs socials as plain text
+// links (already-validated data from the author content collection — no new
+// fields needed). Pure chrome — no JSON-LD here.
+import { siteConfig } from '../config';
+import { externalAttrs } from '../lib/links';
+
+interface Props {
+  authorName: string;
+  sameAs?: string[];
+}
+const { authorName, sameAs = [] } = Astro.props as Props;
+
+const year = new Date().getFullYear();
+
+const legalLinks = [
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Use', href: '/terms' },
+  ...siteConfig.footer.links,
+];
+
+function hostLabel(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+---
+<footer class="site-footer">
+  <div class="wrap">
+    {siteConfig.footer.tagline && <p class="tagline">{siteConfig.footer.tagline}</p>}
+    <ul class="footer-links">
+      {legalLinks.map((l) => (
+        <li><a href={l.href} {...externalAttrs(l.href)}>{l.label}</a></li>
+      ))}
+    </ul>
+    {sameAs.length > 0 && (
+      <ul class="footer-social" aria-label={`${authorName} elsewhere`}>
+        {sameAs.map((url) => (
+          <li><a href={url} {...externalAttrs(url)}>{hostLabel(url)}</a></li>
+        ))}
+      </ul>
+    )}
+    <p class="copyright">&copy; {year} {authorName}. All rights reserved.</p>
+  </div>
+</footer>

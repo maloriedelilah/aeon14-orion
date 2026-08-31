@@ -1,0 +1,48 @@
+---
+// Shared row for a book inside a LISTING of books (series index's per-series
+// member list, and a series' own detail page) — NOT used on the homepage's
+// single featured-book card or the book detail page's own hero, which have
+// their own layouts. One place to keep "thumbnail + title + Book # + short
+// blurb + more link" consistent across both series-listing surfaces.
+//
+// No JSON-LD here — this is pure display; the canonical Book node lives once
+// on its own /books/<slug> page (DD-001), same as everywhere else book covers
+// are shown as clickable teasers.
+import { truncateWords } from '../lib/text';
+import { isFutureRelease } from '../lib/date';
+
+interface Props {
+  slug: string;
+  title: string;
+  cover: string;
+  description: string;
+  seriesPosition?: number;
+  maxWords?: number;
+  // Optional: when supplied, a book whose datePublished is still in the
+  // future gets a PRE-ORDER badge after its title (see lib/date.ts's
+  // isFutureRelease — same derivation used for JSON-LD availability and the
+  // homepage's Latest release/Coming soon split, so this can never drift out
+  // of sync with those). Omit entirely on a listing that doesn't have/need
+  // book dates on hand.
+  datePublished?: Date;
+}
+const {
+  slug, title, cover, description, seriesPosition, maxWords = 70, datePublished,
+} = Astro.props as Props;
+
+const { text: blurb, truncated } = truncateWords(description, maxWords);
+const isPreorder = datePublished ? isFutureRelease(datePublished) : false;
+---
+<li class="book-list-item">
+  <a class="cover-link" href={`/books/${slug}`} aria-hidden="true" tabindex="-1">
+    <img class="book-thumb" src={cover} alt={`Cover of ${title}`} />
+  </a>
+  <div class="book-list-item-body">
+    <h3>
+      <a href={`/books/${slug}`}>{title}</a>
+      {isPreorder && <>{' '}<span class="preorder-badge">Pre-order</span></>}
+    </h3>
+    {seriesPosition != null && <p class="book-number">Book {seriesPosition}</p>}
+    <p class="book-blurb">{blurb}{truncated && <> <a href={`/books/${slug}`}>more</a></>}</p>
+  </div>
+</li>

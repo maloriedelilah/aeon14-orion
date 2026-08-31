@@ -27,7 +27,7 @@
 # only src/pages/api/*.ts opting into on-demand rendering via
 # `export const prerender = false` — every other route stays a prerendered
 # static file at zero per-request Workers cost.
-name = "author-geo"
+name = "aeon14-orion"
 compatibility_date = "2026-07-21"
 
 # CRITICAL: without this, every deploy WIPES the runtime variables/secrets

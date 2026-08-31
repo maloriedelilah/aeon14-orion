@@ -1,0 +1,40 @@
+---
+// The canonical Person home (DD-001). Every author/co-author's FULL Person node is
+// emitted HERE, exactly once, at @id = "{site}/about#<slug>". Every other page
+// (Base's WebSite.publisher, Book.author, Series.author, ...) references these same
+// @ids via a minimal named stub instead of re-emitting or bare-@id-referencing them.
+import Base from '@theme/layouts/Base.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { FileSource } from '../lib/sources/FileSource';
+import { authorNode, graph } from '../lib/jsonld';
+import { externalAttrs } from '../lib/links';
+
+const source = new FileSource();
+const authors = await source.getAuthors();
+
+const pageGraph = graph(authors.map((a) => authorNode(a)));
+---
+<Base title="About" description={authors[0]?.bio}>
+  <JsonLd graph={pageGraph} />
+  <article>
+    <h1>About</h1>
+    {authors.map((a) => (
+      <section aria-labelledby={`author-${a.slug}`}>
+        <h2 id={`author-${a.slug}`}>{a.name}</h2>
+        <div class="author-card">
+          {a.photo && <img class="author-photo" src={a.photo} alt={a.name} />}
+          <div class="author-card-body">
+            <p>{a.bio}</p>
+            {a.sameAs.length > 0 && (
+              <ul>
+                {a.sameAs.map((url) => (
+                  <li><a href={url} {...externalAttrs(url)}>{url}</a></li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </section>
+    ))}
+  </article>
+</Base>

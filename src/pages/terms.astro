@@ -1,0 +1,18 @@
+---
+// Terms of Use. Plain content page — no JSON-LD (this isn't a schema.org
+// entity), rendered straight from the `legal` collection so the author edits
+// markdown, not a template.
+import { getEntry, render } from 'astro:content';
+import Base from '@theme/layouts/Base.astro';
+
+const entry = await getEntry('legal', 'terms');
+if (!entry) throw new Error('terms.astro: no src/content/legal/*.md with slug "terms" found');
+const { Content } = await render(entry);
+---
+<Base title={entry.data.title} description="Terms of use">
+  <article>
+    <h1>{entry.data.title}</h1>
+    <p class="legal-updated">Updated {entry.data.updated.toISOString().slice(0, 10)}</p>
+    <Content />
+  </article>
+</Base>

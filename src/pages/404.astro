@@ -1,0 +1,19 @@
+---
+// Custom 404. Astro's static-build convention (dist/404.html at the build
+// root) is what Cloudflare Pages auto-detects to serve a REAL 404 status for
+// any unmatched path — without this file, Cloudflare falls back to serving
+// index.html for every bogus URL, i.e. a 200 everywhere, which is the exact
+// gap this page closes. No JSON-LD graph of its own (this isn't a schema.org
+// entity, same call as privacy.astro/terms.astro) — Base still emits the
+// sitewide WebSite graph so the page stays schema-valid.
+import Base from '@theme/layouts/Base.astro';
+---
+<Base title="Page not found" description="The page you're looking for doesn't exist.">
+  <article class="not-found">
+    <h1>Page not found</h1>
+    <p>The page you were looking for doesn't exist, may have moved, or the link may be out of date.</p>
+    <p>
+      <a href="/">Go to the homepage</a> or <a href="/series/">browse the series</a>.
+    </p>
+  </article>
+</Base>

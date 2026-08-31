@@ -1,0 +1,72 @@
+---
+// Theme (hub) detail page. Mirrors books/[slug].astro and series/[slug].astro.
+// Route is /themes/<slug> (matches the live aeon14.com convention per the
+// manifest note); the underlying content collection is `hubs`.
+import Base from '@theme/layouts/Base.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import CompsBlock from '@theme/components/CompsBlock.astro';
+import { FileSource } from '../../lib/sources/FileSource';
+import { hubPageExtra, hubId, breadcrumbNode, bookId, pageUrl, graph } from '../../lib/jsonld';
+
+const source = new FileSource();
+
+export async function getStaticPaths() {
+  const src = new FileSource();
+  const hubs = await src.getHubs();
+  return hubs.map((h) => ({ params: { slug: h.slug } }));
+}
+
+const { slug } = Astro.params;
+const hub = await source.getHub(slug as string);
+if (!hub) throw new Error(`No theme found for slug "${slug}"`);
+
+const allBooks = await source.getBooks();
+const memberBooks = hub.bookSlugs
+  .map((s) => allBooks.find((b) => b.slug === s))
+  .filter((b): b is NonNullable<typeof b> => Boolean(b));
+// Pass {id, name} so hubGraph emits a NAMED STUB per member (DD-001) — a bare
+// @id here would dangle on a standalone fetch of just this page's JSON-LD.
+const members = memberBooks.map((b) => ({ id: bookId(b.slug), name: b.title }));
+
+// No standalone "Themes" index page exists to link as an intermediate crumb
+// (Tier-1 scope), so the trail goes straight from Home to this theme.
+//
+// NOTE (fixed 2026-07-23): this page's own node is now Base.astro's per-page
+// node (typed CollectionPage via `pageType`, below) — NOT a second, separate
+// node emitted here. Two nodes for one URL (the old plain WebPage Base.astro
+// always added, PLUS this page's own full CollectionPage) was a genuine
+// contradiction (same name/description asserted twice by two different
+// entities for the one page) — see jsonld.ts's hubPageExtra() doc comment.
+const pageGraph = graph([
+  breadcrumbNode([{ name: 'Home', url: pageUrl('/') }, { name: hub.name }]),
+]);
+---
+<Base
+  title={hub.name}
+  description={hub.description}
+  pageType="CollectionPage"
+  pageId={hubId(hub.slug)}
+  pageExtra={hubPageExtra(hub, members)}
+>
+  <Fragment slot="breadcrumbs">
+    <a href="/">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">{hub.name}</span>
+  </Fragment>
+  <JsonLd graph={pageGraph} />
+  <article>
+    <h1>{hub.name}</h1>
+    <p>{hub.description}</p>
+
+    <section aria-label="Books in this theme">
+      <h2>Books</h2>
+      <ol>
+        {memberBooks.map((b) => (
+          <li><a href={`/books/${b.slug}`}>{b.title}</a></li>
+        ))}
+      </ol>
+    </section>
+
+    <CompsBlock comps={hub.comps} />
+  </article>
+</Base>

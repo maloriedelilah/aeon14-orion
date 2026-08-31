@@ -1,0 +1,14 @@
+---
+// Contact page. Static Tier-1 shell around ContactForm — no JSON-LD payload of
+// its own (Base.astro already carries the sitewide WebSite graph; a contact
+// page isn't a schema.org entity in this model). See README "Contact form"
+// for how /api/contact gets wired up in Tier 2.
+import Base from '@theme/layouts/Base.astro';
+import ContactForm from '@theme/components/ContactForm.astro';
+---
+<Base title="Contact" description="Get in touch.">
+  <article class="card">
+    <h1>Contact</h1>
+    <ContactForm description="Have a question or just want to say hello? Send a message below." />
+  </article>
+</Base>

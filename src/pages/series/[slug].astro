@@ -1,0 +1,106 @@
+---
+// Series detail page. Mirrors src/pages/books/[slug].astro: builds the @graph via
+// the engine's jsonld.ts builder, sourced ONLY through the ContentSource seam.
+//
+// DD-001: no full Person node here — authors are referenced by @id + named stub
+// via seriesNode's `authors` param, co-author-safe via Series.authorSlugs.
+import Base from '@theme/layouts/Base.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import CompsBlock from '@theme/components/CompsBlock.astro';
+import BookListItem from '@theme/components/BookListItem.astro';
+import { FileSource } from '../../lib/sources/FileSource';
+import { seriesNode, seriesReadingOrder, breadcrumbNode, bookId, pageUrl, graph } from '../../lib/jsonld';
+
+const source = new FileSource();
+
+export async function getStaticPaths() {
+  const src = new FileSource();
+  const seriesList = await src.getSeries();
+  return seriesList.map((s) => ({ params: { slug: s.slug } }));
+}
+
+const { slug } = Astro.params;
+const series = await source.getSeriesBySlug(slug as string);
+if (!series) throw new Error(`No series found for slug "${slug}"`);
+
+const allAuthors = await source.getAuthors();
+const seriesAuthors = allAuthors
+  .filter((a) => series.authorSlugs.includes(a.slug))
+  .map((a) => ({ slug: a.slug, name: a.name }));
+if (seriesAuthors.length === 0) {
+  throw new Error(`Series "${series.slug}" has no resolvable author (authorSlugs: ${series.authorSlugs.join(', ')})`);
+}
+
+const allBooks = await source.getBooks();
+const memberBooks = allBooks
+  .filter((b) => b.seriesSlug === series.slug)
+  .sort((a, b) => (a.seriesPosition ?? 0) - (b.seriesPosition ?? 0));
+// {id, name, position} — position feeds seriesReadingOrder's ItemList/ListItem
+// (the VALID home for "book N in this series"; NOT a `position` on the Book
+// node itself — see jsonld.ts's comments on both bookNode() and
+// seriesReadingOrder()).
+const members = memberBooks.map((b) => ({ id: bookId(b.slug), name: b.title, position: b.seriesPosition }));
+
+// Breadcrumb trail — matches the visible <Fragment slot="breadcrumbs"> below.
+const crumbs = [
+  { name: 'Home', url: pageUrl('/') },
+  { name: 'Series', url: pageUrl('/series') },
+  { name: series.name },
+];
+
+const pageGraph = graph([
+  seriesNode(series, members, seriesAuthors),
+  seriesReadingOrder(series, members),
+  breadcrumbNode(crumbs),
+]);
+
+const byline = seriesAuthors.map((a) => a.name).join(', ');
+// Prefer the series' own cover; fall back to its first book's so a share of
+// this page still gets a real thumbnail even for series without cover art.
+// shareImageAlt is derived in lockstep with shareImage (never the page title
+// — see Base.astro's `imageAlt` doc) so the two can't end up describing
+// different images.
+const shareImage = series.cover ?? memberBooks[0]?.cover;
+const shareImageAlt = series.cover
+  ? `Cover art for ${series.name}`
+  : (memberBooks[0] ? `Cover of ${memberBooks[0].title}` : undefined);
+---
+<Base
+  title={`${series.name} — ${byline}`}
+  description={series.description}
+  image={shareImage}
+  imageAlt={shareImageAlt}
+>
+  <Fragment slot="breadcrumbs">
+    <a href="/">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="/series">Series</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">{series.name}</span>
+  </Fragment>
+  <JsonLd graph={pageGraph} />
+  <article>
+    <h1>{series.name}</h1>
+    {series.cover && <img class="cover" src={series.cover} alt={`Cover art for ${series.name}`} />}
+    <p class="series-description">{series.description}</p>
+    <p>By <a href="/about">{byline}</a></p>
+
+    <section aria-label="Books in this series">
+      <h2>Books in this series</h2>
+      <ul class="book-thumb-list">
+        {memberBooks.map((b) => (
+          <BookListItem
+            slug={b.slug}
+            title={b.title}
+            cover={b.cover}
+            description={b.description}
+            seriesPosition={b.seriesPosition}
+            datePublished={b.datePublished}
+          />
+        ))}
+      </ul>
+    </section>
+
+    <CompsBlock comps={series.comps} />
+  </article>
+</Base>

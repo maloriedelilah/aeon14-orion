@@ -1,0 +1,144 @@
+---
+// Home / author landing.
+//
+// DD-001: this page emits NO page-level JSON-LD of its own. Base.astro already
+// emits the sitewide WebSite (with publisher as a named stub — DD-001), and the
+// author blurb below is DISPLAY TEXT ONLY, linking to /about#<slug> where the
+// canonical full Person node lives exactly once. Emitting a second full Person
+// node (or even a bare @id) here would violate the identity spine, so: don't.
+import Base from '@theme/layouts/Base.astro';
+import HeroSlideshow from '@theme/components/HeroSlideshow.astro';
+import ComingSoonRow from '@theme/components/ComingSoonRow.astro';
+import SeriesTeaser from '@theme/components/SeriesTeaser.astro';
+import SubscribeForm from '@theme/components/SubscribeForm.astro';
+import { FileSource } from '../lib/sources/FileSource';
+import { siteConfig } from '../config';
+import { isFutureRelease, formatDate } from '../lib/date';
+
+const source = new FileSource();
+const [books, seriesList, authors] = await Promise.all([
+  source.getBooks(),
+  source.getSeries(),
+  source.getAuthors(),
+]);
+
+const now = new Date();
+
+// "Preorder" is never a separate field — a book with a future datePublished
+// IS a preorder, everywhere on the site at once (see lib/date.ts's
+// isFutureRelease doc comment: this same check also drives jsonld.ts's
+// Offer.availability and the PRE-ORDER badge on series listings/book pages).
+const releasedBooks = books.filter((b) => !isFutureRelease(b.datePublished, now));
+const upcomingBooks = books
+  .filter((b) => isFutureRelease(b.datePublished, now))
+  .sort((a, b) => a.datePublished.getTime() - b.datePublished.getTime()); // soonest first
+
+// (a) Hero slideshow: most recently RELEASED book first, then every upcoming
+// book as its own slide (soonest first) — see HeroSlideshow.astro. A book
+// never appears here before it's either released or genuinely upcoming, so
+// this can never show something that isn't real yet.
+const latestRelease = [...releasedBooks].sort(
+  (a, b) => b.datePublished.getTime() - a.datePublished.getTime(),
+)[0];
+
+const heroSlides = [
+  ...(latestRelease ? [{ kind: 'latest' as const, book: latestRelease }] : []),
+  ...upcomingBooks.map((book) => ({ kind: 'comingSoon' as const, book })),
+].map(({ kind, book }) => ({
+  kind,
+  slug: book.slug,
+  title: book.title,
+  cover: book.cover,
+  description: book.description,
+  releaseDate: formatDate(book.datePublished),
+}));
+
+// (b) Coming soon row: same upcoming-book set, with series context resolved
+// for the "Book N of <Series>" line.
+const seriesBySlug = new Map(seriesList.map((s) => [s.slug, s] as const));
+const comingSoonBooks = upcomingBooks.map((b) => {
+  const s = b.seriesSlug ? seriesBySlug.get(b.seriesSlug) : undefined;
+  return {
+    slug: b.slug,
+    title: b.title,
+    cover: b.cover,
+    releaseDate: formatDate(b.datePublished),
+    seriesName: s?.name,
+    seriesSlug: s?.slug,
+    seriesPosition: b.seriesPosition,
+  };
+});
+
+// (c) Each series, with its member books (ordered by seriesPosition) —
+// intentionally ALL member books including any upcoming ones, so a reader
+// browsing a series here sees its full lineup; an upcoming entry still gets
+// the same PRE-ORDER badge treatment as everywhere else.
+const seriesWithBooks = seriesList.map((s) => ({
+  series: s,
+  books: books
+    .filter((b) => b.seriesSlug === s.slug)
+    .sort((a, b) => (a.seriesPosition ?? 0) - (b.seriesPosition ?? 0))
+    .map((b) => ({
+      slug: b.slug,
+      title: b.title,
+      cover: b.cover,
+      isUpcoming: isFutureRelease(b.datePublished, now),
+    })),
+}));
+
+// (d) Truncated "about the author" blurb for the site's main author — the same
+// primary/first author entry Base.astro treats as the WebSite publisher.
+const primaryAuthor = authors[0];
+const BIO_TRUNCATE_CHARS = 220;
+const truncatedBio = primaryAuthor && primaryAuthor.bio.length > BIO_TRUNCATE_CHARS
+  ? `${primaryAuthor.bio.slice(0, BIO_TRUNCATE_CHARS).trimEnd()}…`
+  : primaryAuthor?.bio;
+---
+<Base
+  title={primaryAuthor?.name ?? 'Home'}
+  description={primaryAuthor?.bio}
+  image={latestRelease?.cover}
+  imageAlt={latestRelease ? `Cover of ${latestRelease.title}` : undefined}
+>
+  <h1 class="visually-hidden">{primaryAuthor?.name ?? 'Home'}</h1>
+
+  {siteConfig.slogan && (
+    <p class="site-slogan">{siteConfig.slogan}</p>
+  )}
+
+  <HeroSlideshow slides={heroSlides} intervalSeconds={siteConfig.heroSlideshow.intervalSeconds} />
+
+  <ComingSoonRow books={comingSoonBooks} />
+
+  <SeriesTeaser entries={seriesWithBooks} />
+
+  {primaryAuthor && (
+    <section aria-label="About the author">
+      <h2>About {primaryAuthor.name}</h2>
+      <div class="author-card">
+        {primaryAuthor.photo && (
+          <img class="author-photo" src={primaryAuthor.photo} alt={primaryAuthor.name} />
+        )}
+        <div class="author-card-body">
+          <p>{truncatedBio}</p>
+          <p><a href={`/about#${primaryAuthor.slug}`}>More about {primaryAuthor.name} &rarr;</a></p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {/* Newsletter signup placed last deliberately, so it reads as
+    a closing "stay in touch" CTA after a reader has already seen the books/
+    series/author sections above, not a first-thing interruption. Imported
+    via @theme so an implementer can shadow it exactly like every other
+    presentation component (src/overrides/components/SubscribeForm.astro) —
+    see THEMING.md. The endpoint (/api/subscribe), provider adapters, and
+    anti-spam handling are documented in NEWSLETTER.md.
+  */}
+  <section aria-label="Newsletter signup" class="card">
+    <SubscribeForm
+      title="Stay in the loop"
+      description="Get an email when a new book releases — no spam, unsubscribe anytime."
+    />
+  </section>
+</Base>

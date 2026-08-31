@@ -1,0 +1,44 @@
+---
+// Events listing. Tier-1 scope has no per-event detail page, so each Event's
+// canonical @id is anchored to this listing page itself (see eventId in
+// jsonld.ts) rather than a route of its own.
+import Base from '@theme/layouts/Base.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import { FileSource } from '../../lib/sources/FileSource';
+import { eventNode, graph } from '../../lib/jsonld';
+import { externalAttrs } from '../../lib/links';
+
+const source = new FileSource();
+const events = await source.getEvents();
+const sorted = [...events].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+// null (not an empty graph) when there are no events (fixed 2026-07-23): a
+// `{"@graph": []}` block asserts nothing, describes nothing, and was being
+// emitted unconditionally even while the page body correctly said "No
+// upcoming events." -- structured data should describe what's actually on
+// the page, the same discipline already applied to ComingSoonRow/
+// HeroSlideshow (render nothing at all rather than an empty shell).
+const pageGraph = sorted.length > 0 ? graph(sorted.map((e) => eventNode(e))) : null;
+---
+<Base title="Events" description="Upcoming appearances and events.">
+  {pageGraph && <JsonLd graph={pageGraph} />}
+  <article>
+    <h1>Events</h1>
+    {sorted.length === 0 && <p>No upcoming events.</p>}
+    <ul>
+      {sorted.map((e) => (
+        <li id={e.slug}>
+          <h2>{e.name}</h2>
+          <p>
+            <time datetime={e.startDate.toISOString()}>
+              {e.startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </time>
+            {e.location && <> — {e.location}</>}
+          </p>
+          <p>{e.description}</p>
+          {e.url && <p><a href={e.url} {...externalAttrs(e.url)}>Details &rarr;</a></p>}
+        </li>
+      ))}
+    </ul>
+  </article>
+</Base>

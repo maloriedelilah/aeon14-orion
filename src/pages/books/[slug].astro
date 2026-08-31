@@ -1,0 +1,142 @@
+---
+// Book detail page. Builds the @graph (Book, cross-linked by @id) via the engine's
+// jsonld.ts builder, sourced ONLY through the ContentSource seam (FileSource).
+//
+// DD-001 note: this page does NOT emit the full Person node anymore — that lives
+// exactly once on /about. It references each of the book's authors by @id + named
+// stub (bookNode's `authors` opt), co-author-safe via Book.authorSlugs.
+import Base from '@theme/layouts/Base.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import CompsBlock from '@theme/components/CompsBlock.astro';
+import { FileSource } from '../../lib/sources/FileSource';
+import { bookNode, breadcrumbNode, pageUrl, graph } from '../../lib/jsonld';
+import { externalAttrs } from '../../lib/links';
+import { formatDate, isFutureRelease } from '../../lib/date';
+
+const source = new FileSource();
+
+export async function getStaticPaths() {
+  const src = new FileSource();
+  const books = await src.getBooks();
+  return books.map((book) => ({ params: { slug: book.slug } }));
+}
+
+const { slug } = Astro.params;
+const book = await source.getBook(slug as string);
+if (!book) throw new Error(`No book found for slug "${slug}"`);
+
+const allAuthors = await source.getAuthors();
+const bookAuthors = allAuthors
+  .filter((a) => book.authorSlugs.includes(a.slug))
+  .map((a) => ({ slug: a.slug, name: a.name }));
+if (bookAuthors.length === 0) {
+  throw new Error(`Book "${book.slug}" has no resolvable author (authorSlugs: ${book.authorSlugs.join(', ')})`);
+}
+
+// Resolve the series to a {slug, name} so bookNode can emit isPartOf as a NAMED
+// STUB (DD-001) rather than a bare @id that would dangle on this page.
+const series = book.seriesSlug
+  ? await source.getSeriesBySlug(book.seriesSlug)
+  : undefined;
+
+// Which themed hub(s) is this book a member of? Hub -> book membership is
+// declared on the HUB side only (Hub.books, see content.config.ts) — there's
+// no reverse index, so find it by scanning all hubs for this book's slug.
+// Fine at this content scale (Tier 1: static build, small collections); a
+// Tier 2 D1Source could add a real reverse lookup if that ever changes.
+const allHubs = await source.getHubs();
+const bookHubs = allHubs
+  .filter((h) => h.bookSlugs.includes(book.slug))
+  .map((h) => ({ slug: h.slug, name: h.name }));
+
+// Breadcrumb trail — built to MATCH the visible <Fragment slot="breadcrumbs">
+// below exactly (a BreadcrumbList that disagrees with what a visitor actually
+// sees on the page would be its own kind of contradiction). Home -> Series ->
+// Book when the book belongs to one; Home -> Book for a standalone title.
+const crumbs = [
+  { name: 'Home', url: pageUrl('/') },
+  ...(series ? [{ name: series.name, url: pageUrl(`/series/${series.slug}`) }] : []),
+  { name: book.title },
+];
+
+const pageGraph = graph([
+  bookNode(book, {
+    series: series ? { slug: series.slug, name: series.name } : undefined,
+    authors: bookAuthors,
+    hubs: bookHubs,
+  }),
+  breadcrumbNode(crumbs),
+]);
+
+const byline = bookAuthors.map((a) => a.name).join(', ');
+const isPreorder = isFutureRelease(book.datePublished);
+// og:type=book's book:isbn wants a SINGLE ISBN; isbn lives per-edition (a book
+// can have several formats/retailers), so use the first edition that has one.
+const bookIsbn = book.editions.find((e) => e.isbn)?.isbn;
+---
+<Base
+  title={`${book.title} — ${byline}`}
+  description={book.description}
+  image={book.cover}
+  imageAlt={`Cover of ${book.title}`}
+  type="book"
+  bookIsbn={bookIsbn}
+  bookReleaseDate={book.datePublished}
+>
+  <Fragment slot="breadcrumbs">
+    <a href="/">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    {series && (
+      <>
+        <a href={`/series/${series.slug}`}>{series.name}</a>
+        <span class="sep" aria-hidden="true">/</span>
+      </>
+    )}
+    <span aria-current="page">{book.title}</span>
+  </Fragment>
+  <JsonLd graph={pageGraph} />
+  <article>
+    <div class="book-card">
+      <div class="cover-col">
+        <img class="cover" src={book.cover} alt={`Cover of ${book.title}`} />
+        <p class="release-date">{isPreorder ? 'Releases' : 'Released'} {formatDate(book.datePublished)}</p>
+      </div>
+      <div class="book-card-body">
+        <h1>{book.title}{isPreorder && <>{' '}<span class="preorder-badge">Pre-order</span></>}</h1>
+        {book.subtitle && <p class="subtitle">{book.subtitle}</p>}
+        {series && book.seriesPosition != null && (
+          <p class="series-info">
+            Book {book.seriesPosition} of <a href={`/series/${series.slug}`}>{series.name}</a>
+          </p>
+        )}
+        <p>{book.description}</p>
+        <p>By <a href="/about">{byline}</a></p>
+
+        <section class="get-book-section" aria-label="Editions">
+          <h2>Get the book</h2>
+          <ul>
+            {book.editions.map((e) => (
+              <li>
+                <a href={e.url} {...externalAttrs(e.url)}>{e.retailer} ({e.format})</a>
+                {e.price && <span> — {e.price} {e.currency}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <CompsBlock comps={book.comps} class="comps-section" />
+
+    {bookHubs.length > 0 && (
+      <section class="hubs-section" aria-label="Featured in">
+        <h2>Featured in</h2>
+        <ul>
+          {bookHubs.map((h) => (
+            <li><a href={`/themes/${h.slug}`}>{h.name}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+</Base>

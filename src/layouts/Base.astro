@@ -1,0 +1,236 @@
+---
+// Base layout: <head>, sitewide WebSite JSON-LD, breadcrumbs slot.
+// Per-page @graph payloads (Book, Series, Hub, ...) are injected separately by the
+// page templates themselves via <JsonLd graph={...} /> — this layout only carries
+// the SITE-WIDE graph that belongs on every page.
+//
+// Identity spine (DD-001): WebSite.publisher must resolve on EVERY page, including
+// ones that supply no author of their own (home, series, themes, events, About
+// itself). So this layout reads the primary author from the ContentSource directly
+// — it does NOT depend on the page passing one in — and emits a NAMED STUB
+// (never a bare @id) pointing at the canonical Person node defined once on /about.
+//
+// WebSite vs WebPage (fixed 2026-07-23): every page shares ONE WebSite @id
+// (`#website`), so that node's properties must be the same everywhere — it
+// is ONE entity, asserted identically on every page it appears on. It used
+// to carry `name: title`, which is wrong the instant two pages have
+// different titles (which is every pair of pages): that's the SAME @id
+// being asserted to have two different names, a real contradiction, not
+// just a stylistic wart. The page's own title/description belong on a
+// per-page WebPage node instead (own @id, own url, own name), linked back
+// to the constant WebSite via `isPartOf`. WebSite.name reuses the exact
+// value already used for `og:site_name` below (the primary author's name)
+// so there is one source of truth for "what is this site called", not two.
+//
+// Per-page node @type override (fixed 2026-07-23): a page whose real subject
+// IS a more specific kind of page (e.g. a themed hub -> CollectionPage) must
+// NOT also get a generic WebPage node — CollectionPage IS-A WebPage in
+// schema.org's own hierarchy, so two separate nodes for the one URL would be
+// the same contradiction-by-duplication as the WebSite bug, just relocated.
+// `pageType`/`pageId`/`pageExtra` let a page template make ITS node the more
+// specific type instead of adding a second, competing one — `pageId` lets it
+// reuse an @id something ELSE already references (e.g. bookNode()'s isPartOf
+// referencing a hub's page by hubId()), and `pageExtra` merges in whatever
+// type-specific properties that more specific type needs (e.g. CollectionPage's
+// `about`/`mainEntity`). Ordinary pages pass none of these and get the
+// original plain-WebPage behavior, unchanged.
+// JsonLd is part of the structured-data engine (renders whatever graph a page
+// assembles into a <script type="application/ld+json"> tag) — deliberately
+// imported directly, NOT through the `@theme` alias. Authors have no
+// opinions on schema.org, and shadowing this would risk silently breaking
+// the validated structured-data contract (see src/overrides/README.md).
+import JsonLd from '../components/JsonLd.astro';
+// Header/Footer are pure presentation — routed through `@theme` so an
+// implementer can shadow either (or both) in src/overrides/components/
+// without touching this file. See src/overrides/README.md.
+import Header from '@theme/components/Header.astro';
+import Footer from '@theme/components/Footer.astro';
+import { authorId, namedStub, pageUrl } from '../lib/jsonld';
+import { FileSource } from '../lib/sources/FileSource';
+import { siteConfig } from '../config';
+// CSS load order (THEMING.md): base.css (Tier 3, upstream-owned structural/
+// layout CSS) FIRST, theme.css (Tier 1, implementer-owned tokens ONLY) NEXT,
+// then '@theme-styles/site.css' (Tier B, implementer-owned free-form CSS,
+// OPTIONAL) LAST — cascade order means theme.css's tokens always win over
+// base.css's defaults, and a Tier B override (if the implementer created
+// one) always wins over both. The Tier B import is unconditional and always
+// succeeds even when src/overrides/styles/site.css doesn't exist — it
+// resolves to an empty stub in that case, via themeStylesOverridePlugin
+// (see vite-plugins/theme-styles-override.mjs and astro.config.mjs). See
+// the header comments in base.css/theme.css for the Tier 3/Tier 1 contract.
+import '../styles/base.css';
+import '../styles/theme.css';
+import '@theme-styles/site.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  // Open Graph / Twitter Card image — a root-relative path (e.g. a book's
+  // `cover` or the author's `photo`, both already plain strings by the time
+  // they reach here — see FileSource.ts). Falls back to the primary author's
+  // photo when a page doesn't have anything more specific of its own (a book
+  // cover, a series cover, ...); omitted entirely if neither exists, since a
+  // missing og:image just means link previews render without a thumbnail
+  // rather than breaking.
+  image?: string;
+  // Describes the IMAGE ITSELF (e.g. "Cover of The Cinder Reach"), never the
+  // page (fixed 2026-07-23: this used to default to the page `title` on every
+  // page, which describes the PAGE, not whatever picture is actually shown —
+  // wrong on its face for e.g. the homepage, whose title is the author's
+  // name but whose image is a book cover). REQUIRED alongside `image` — pass
+  // both or neither. When neither is passed (sitewide author-photo fallback),
+  // a correct alt is generated automatically below.
+  imageAlt?: string;
+  // Open Graph type. 'book' unlocks the book: namespace props below (only
+  // meaningful for actual book pages) — everything else should stay the
+  // 'website' default. Doesn't affect Twitter Cards (they don't have a
+  // matching concept).
+  type?: 'website' | 'book' | 'profile';
+  // Only read when type === 'book'. Both optional and independent of each
+  // other — pass whichever the page actually has.
+  bookIsbn?: string;
+  bookReleaseDate?: Date;
+  // schema.org @type for THIS page's own per-page node (default 'WebPage') —
+  // see the file-level comment above. e.g. 'CollectionPage' for a themed hub.
+  pageType?: string;
+  // Override the per-page node's own @id (default: this page's own URL +
+  // '#webpage'). Pass this when something ELSE already references this
+  // page's node by a different, established @id (e.g. hubId()) so the two
+  // don't drift into two different ids for one node.
+  pageId?: string;
+  // Extra schema.org properties merged onto the per-page node — e.g. a hub's
+  // `about`/`mainEntity`. Omitted (nothing merged) for ordinary pages.
+  pageExtra?: Record<string, unknown>;
+}
+const {
+  title, description, image, imageAlt, type = 'website', bookIsbn, bookReleaseDate,
+  pageType = 'WebPage', pageId, pageExtra,
+} = Astro.props as Props;
+
+const source = new FileSource();
+const authors = await source.getAuthors();
+// Tier-1 product decision: single-author template each student clones (co-author
+// arrays are supported end-to-end for when a book/series has one, but the SITE's
+// publisher is the primary/first author entry).
+const primaryAuthor = authors[0];
+if (!primaryAuthor) {
+  throw new Error('Base.astro: no author entry found in src/content/author — WebSite.publisher cannot be built');
+}
+
+// Resolve once here so every page gets a shareable image for free when it has
+// one to offer (its own, or the sitewide author-photo fallback) without every
+// page template having to duplicate this fallback logic itself. The alt text
+// is resolved the SAME way, in lockstep, so it can never describe a
+// different image than the one actually rendered (fixed 2026-07-23; see
+// `imageAlt` prop doc above). `?? 'Cover image'` is a last-resort safety net
+// only — every current call site that passes `image` also passes a real
+// `imageAlt`, but a future page that forgets to should get a harmless generic
+// string, never a silent regression back to reusing the page title.
+const ogImageSrc = image ?? primaryAuthor.photo;
+const ogImage = ogImageSrc ? new URL(ogImageSrc, Astro.site).toString() : undefined;
+const resolvedImageAlt = image
+  ? (imageAlt ?? 'Cover image')
+  : (primaryAuthor.photo ? `Photo of ${primaryAuthor.name}` : undefined);
+
+const websiteId = new URL('#website', Astro.site).toString();
+// Astro.url is already the real, trailing-slash-correct URL for this exact
+// page (matches the canonical link below) — build the WebPage's own @id off
+// of it rather than re-deriving a path, so the two can never disagree.
+const resolvedPageId = pageId ?? new URL('#webpage', Astro.url).toString();
+
+const siteGraph = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      // Trailing-slash-normalized (fixed 2026-07-23) — was the bare site
+      // root with no trailing slash, the only remaining url/@id on the site
+      // that didn't agree with canonical's own trailing-slash convention
+      // (see pageUrl()'s doc comment in jsonld.ts for why the slash side is
+      // the correct one to normalize toward, not the other way around).
+      url: pageUrl('/'),
+      // Constant across every page — see comment above. NOT the per-page title.
+      name: primaryAuthor.name,
+      publisher: namedStub(authorId(primaryAuthor.slug), primaryAuthor.name),
+    },
+    {
+      '@type': pageType,
+      '@id': resolvedPageId,
+      url: Astro.url.toString(),
+      name: title,
+      ...(description ? { description } : {}),
+      // Named stub, never a bare @id (DD-001) — resolves standalone even if
+      // a consumer only reads this one page's graph in isolation.
+      isPartOf: namedStub(websiteId, primaryAuthor.name, 'WebSite'),
+      ...(pageExtra ?? {}),
+    },
+  ],
+};
+---
+<!doctype html>
+<html lang="en" data-theme={siteConfig.theme.mode}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={Astro.url.toString()} />
+
+    {/* Open Graph — every Facebook/Meta-ads link preview and share card reads
+        these; with none of them present the fallback is a bare gray link
+        card with no title/image at all. og:url uses the canonical URL above
+        so a share of a query-stringed link still attributes correctly. */}
+    <meta property="og:type" content={type === 'book' ? 'book' : type === 'profile' ? 'profile' : 'website'} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={Astro.url.toString()} />
+    <meta property="og:site_name" content={primaryAuthor.name} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && resolvedImageAlt && <meta property="og:image:alt" content={resolvedImageAlt} />}
+    {type === 'book' && bookIsbn && <meta property="book:isbn" content={bookIsbn} />}
+    {type === 'book' && bookReleaseDate && (
+      <meta property="book:release_date" content={bookReleaseDate.toISOString().slice(0, 10)} />
+    )}
+
+    {/* Twitter/X Cards — a separate spec from Open Graph (X does NOT reliably
+        fall back to og:* tags), so these are named/duplicated rather than
+        assumed. summary_large_image only when there's actually an image to
+        show large; summary otherwise so a text-only card isn't left mostly
+        blank. */}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    {description && <meta name="twitter:description" content={description} />}
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    {ogImage && resolvedImageAlt && <meta name="twitter:image:alt" content={resolvedImageAlt} />}
+    {siteConfig.social.twitterHandle && (
+      <meta
+        name="twitter:site"
+        content={siteConfig.social.twitterHandle.startsWith('@') ? siteConfig.social.twitterHandle : `@${siteConfig.social.twitterHandle}`}
+      />
+    )}
+
+    {/* REQUIRED: site-wide structured data (WebSite + per-page node). Do NOT
+        remove this render if you shadow this layout under
+        src/overrides/layouts/Base.astro — doing so silently drops the
+        site's schema.org data on every page. See src/overrides/README.md. */}
+    <JsonLd graph={siteGraph} />
+    {siteConfig.theme.accent && (
+      <style set:html={`:root[data-theme="${siteConfig.theme.mode}"] { --accent: ${siteConfig.theme.accent}; }`} />
+    )}
+  </head>
+  <body>
+    <div class="site-shell">
+      <Header authorName={primaryAuthor.name} />
+      <nav class="breadcrumbs" aria-label="breadcrumbs">
+        <div class="wrap">
+          <slot name="breadcrumbs" />
+        </div>
+      </nav>
+      <main class="wrap">
+        <slot />
+      </main>
+      <Footer authorName={primaryAuthor.name} sameAs={primaryAuthor.sameAs} />
+    </div>
+  </body>
+</html>

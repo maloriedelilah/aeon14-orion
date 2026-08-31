@@ -38,10 +38,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const VIRTUAL_SPECIFIER = '@theme-styles/site.css';
-// Vite convention: prefix a resolved *virtual* module id with `\\0` so other
+// Vite convention: prefix a resolved *virtual* module id with `\0` so other
 // plugins (source-map tooling etc.) know not to try to treat it as a real
 // file path on disk.
-const RESOLVED_EMPTY_ID = '\\0' + VIRTUAL_SPECIFIER;
+const RESOLVED_EMPTY_ID = '\0' + VIRTUAL_SPECIFIER;
 
 export function themeStylesOverridePlugin() {
   // Resolved once per plugin instance against THIS file's own location, so it

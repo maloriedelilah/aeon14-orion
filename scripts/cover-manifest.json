@@ -1,0 +1,154 @@
+{
+ "src/content/books/destiny-lost/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_438b5e07dedc46ac8d8818e368b2defe~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/new-canaan/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_04e0a9179b8b4619aff7f9c0aaed1421~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/orion-rising/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_6a4d6c61f13c4b3bbb1f003c30ae0449~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-scipio-alliance/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_3d3e6e4907ea44519afd0e116977f7c1~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/attack-on-thebes/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_1ee1169b39a1417cb078b930d4ca0128~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/war-on-a-thousand-fronts/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_37e8ffc6b2bb4461a9edb33939c180ae~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/precipice-of-darkness/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_f2f6175b9e1546368ac45a2c9727e1e0~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/airthan-ascendancy/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_98ea04e778ab41d49cd1b3c2b60a81cc~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/orion-front/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_8078f14fc5b5483fbc787435b01043a1~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/starfire/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_370fcfe1b7a04be7b473bed87e9bf127~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/race-across-spacetime/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_b804491fc05e417aafb7b433260f9fb6~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/return-to-sol-attack-at-dawn/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_dc6fb96144b14021b26e867a892949f0~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/return-to-sol-star-rise/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_98b4655090824e3b880c6b73c134a558~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-outcast/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_11d20a72148243a8a4fa77c6b2f5340a~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-redeemed/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_8af51f3775234f91ab256bb6f089e5f5~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-triumphant/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_fb4cb946e12a4d9cbff28c39798916a8~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-commander/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_26837464b9bc4ded9c5b5a93a4c769e1~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-infiltrator/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_5b076e318a534146b054d7701b359de4~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-unleashed/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_a7ee2854570d4cf8a1d7c09dea767c36~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/rika-conqueror/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_d8684c11e6b6410b9258c2f830848b81~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-gate-at-the-grey-wolf-star/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_0deac02d123a4a469f502df247ccc079~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-world-at-the-edge-of-space/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_3f1b331683654f08a1772275cb2eeec2~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-dance-on-the-moons-of-serenity/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_45822b32acd7416bb9bdeb8e14f16c22~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-last-bastion-of-star-city/cover.jpg": {
+  "url": "https://images-na.ssl-images-amazon.com/images/P/B073XZXFV3.01.MAIN._SCRM_.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-toll-road-between-the-stars/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_1f5fb9b5c79b408eb4641a826ca35713~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/the-final-stroll-on-perseuss-arm/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_d5140f3de81842ffbeaa14ed71cf5e9d~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-meeting-of-minds-and-bodies/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_03e2fc2726484c998ff2171ae92f3060~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-deception-and-a-promise-kept/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_345b481c00734d83a8ee7d7634a88692~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-surreptitious-rescue-of-friends-and-foes/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/f2a5e3_85924be173644902968cfc58c346f1a9~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-victory-and-a-crushing-defeat/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_ef3dc2c3fd904178b946d7a7fc1e03e6~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-trial-and-the-tribulations/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_72bbfc78665d4fbea281bf4288413d23~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-bargain-and-a-true-tale-told/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_022a4cecda924244b5b4a85af452099a~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/books/a-covenant-and-a-house-divided/cover.jpg": {
+  "url": "https://static.wixstatic.com/media/6a2a0b_d992f70b766c4f37aea095fb10e77d01~mv2.jpg",
+  "max": "1200x1600"
+ },
+ "src/content/author/photo.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_3c792719554e4ae2abce096e116cdf31~mv2.jpg",
+  "max": "1000x1000"
+ },
+ "src/content/series/the-orion-war-cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_82c2fb1a7de649dd8b70d36fcb1bc4db~mv2.jpg",
+  "max": "1400x1400"
+ },
+ "src/content/series/rikas-marauders-cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_8060c98ee9314970929f19838a978109~mv2.jpg",
+  "max": "1400x1400"
+ },
+ "src/content/series/perseus-gate-season-1-cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_5c8c898d57e64ea685b5f5b7331d3e78~mv2.jpg",
+  "max": "1400x1400"
+ },
+ "src/content/series/perseus-gate-season-2-cover.jpg": {
+  "url": "https://static.wixstatic.com/media/fc701e_1af2cc57ac6e47fcb68e81390aeda077~mv2.jpg",
+  "max": "1400x1400"
+ }
+}

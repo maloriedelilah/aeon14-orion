@@ -1,0 +1,33 @@
+# author-geo ownership boundary — see THEMING.md for the full explanation.
+#
+# This repo splits into an UPSTREAM (engine) zone and an IMPLEMENTER-owned
+# (theming + content) zone, so `git pull upstream main` stays conflict-free.
+#
+# Implementer-owned — edit these freely, upstream never touches them:
+#   src/overrides/**              selective component/layout shadows (@theme
+#                                  alias) PLUS the free-form CSS override slot
+#                                  at src/overrides/styles/site.css (the
+#                                  @theme-styles/site.css virtual specifier,
+#                                  see vite-plugins/theme-styles-override.mjs)
+#   src/styles/theme.css          re-theming tokens (colors/fonts/spacing)
+#   src/content/**                your books/series/author/hubs/events content
+#   src/config.ts                 author-editable site config (theme mode, nav, ...)
+#
+# Upstream-owned — do not edit; pull updates via `git pull upstream main`:
+#   everything else in src/, in particular:
+#   src/lib/jsonld.ts       the structured-data engine (Tier 3 — never
+#                           overridable, see THEMING.md)
+#   src/pages/**            page routes (Tier 3 — never overridable)
+#   src/styles/base.css     upstream structural/layout CSS
+#   src/components/**, src/layouts/**  — the ORIGINALS; to change one, copy
+#                           it into src/overrides/ at the same relative path
+#                           (Tier 2) rather than editing it in place here.
+#
+# merge=union on theme.css: a theme.css change is almost always independent
+# per-line token edits (colors/fonts/spacing), so letting git keep BOTH
+# sides' lines on a pull conflict (rather than conflict-marking) is a safe,
+# low-risk convenience for this one specific, narrowly-scoped file. Nothing
+# else in the repo gets this treatment — a union merge on real code could
+# silently splice together two incompatible versions of the same logic, so
+# it is deliberately not applied anywhere else.
+src/styles/theme.css merge=union

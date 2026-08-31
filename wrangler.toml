@@ -1,0 +1,88 @@
+# Cloudflare config for the author-geo template.
+#
+# As of @astrojs/cloudflare v13+ (this repo is on v14), a Wrangler config
+# file is OPTIONAL, and `main` / `[assets]` are managed by the adapter
+# automatically — you only add a config file for things that need real
+# customization (a stable Worker `name`, KV/D1 bindings, etc.), per Astro's
+# own current docs (docs.astro.build/en/guides/integrations-guide/cloudflare
+# -> "Manual Install").
+#
+# Do NOT hand-specify `main` or `[assets]` here. Earlier drafts of this file
+# tried exactly that (mirroring since-outdated guidance/examples floating
+# around for this adapter) and it breaks `astro build` outright: the
+# `@cloudflare/vite-plugin` resolves/validates the Wrangler config as part
+# of Astro's OWN internal build steps (not just at final `wrangler deploy`),
+# and a hand-written `main` pointing into `dist/` doesn't exist yet at that
+# point in a fresh build — real error: "The provided Wrangler config main
+# field ... doesn't point to an existing file." Separately, this repo
+# briefly also tried the older Cloudflare-Pages-style `pages_build_output_dir`
+# — that's now unsupported entirely (see the adapter's own changelog:
+# "Removed: Cloudflare Pages support") and hits its own real, currently-open
+# upstream bug (wrangler 4.98+ rejects the adapter's auto-generated "ASSETS"
+# binding name specifically when `pages_build_output_dir` is present — see
+# cloudflare/workers-sdk#14226, withastro/astro#16107). Bottom line: for
+# this adapter version, LESS config here is correct, not more.
+#
+# `astro.config.mjs` has `output: 'static'` + `adapter: cloudflare()`, with
+# only src/pages/api/*.ts opting into on-demand rendering via
+# `export const prerender = false` — every other route stays a prerendered
+# static file at zero per-request Workers cost.
+name = "author-geo"
+compatibility_date = "2026-07-21"
+
+# CRITICAL: without this, every deploy WIPES the runtime variables/secrets
+# set in the Cloudflare dashboard (Settings > Variables & Secrets) — Wrangler
+# treats "no [vars] block here" as "there should be no vars", not "leave
+# whatever's in the dashboard alone", and deletes them on each deploy. This
+# repo has no [vars] block (env vars are runtime secrets, deliberately never
+# committed — see .env.example), so `keep_vars` is mandatory, not optional.
+# Confirmed via cloudflare/workers-sdk#8871 and direct experience on a real
+# deployed site built from this template: contact form secrets
+# (RESEND_API_KEY, TURNSTILE_SECRET_KEY, CONTACT_TO_EMAIL,
+# CONTACT_FROM_EMAIL) got silently deleted by routine code-only deploys
+# without this set.
+keep_vars = true
+
+# `directory` / `binding` are deliberately NOT set here — the adapter
+# auto-manages those (see the note above). `not_found_handling` IS set
+# explicitly: Cloudflare's own docs on the Workers-static-assets product
+# ("Static Site Generation (SSG) and custom 404 pages") are explicit that
+# WITHOUT this, an unmatched URL does not reliably get a real 404 status
+# from the nearest 404.html — exactly the silent-200-everywhere gap PR #23
+# closed for the (now-unsupported) classic Pages product. Setting it here
+# keeps that fix intact under the new deploy model.
+[assets]
+not_found_handling = "404-page"
+
+# Observability: Workers Logs + traces, so requests to /api/contact (the
+# only on-demand route in this repo — everything else is prerendered and
+# never touches a Worker invocation) show up in the Cloudflare dashboard for
+# debugging/monitoring instead of being invisible. `enabled = false` at the
+# top level is Cloudflare's own documented shape for this block — the real
+# on/off switches are the nested [observability.logs] / [.traces] toggles.
+# Traces are off for now (no distributed-tracing need yet for a single
+# simple POST route); logs are on with 100% sampling and persisted, since
+# contact-form volume is low enough that full logging costs nothing and
+# gives real visibility into failures (bad Turnstile tokens, Resend errors).
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
+# --- Tier 2 forms: no bindings needed. Sessions get an auto-provisioned
+# "SESSION" KV namespace by default (the adapter's own default behavior,
+# unrelated to anything built here) — harmless and zero-setup, since
+# Cloudflare auto-provisions it on deploy.
+
+# D1 (data layer): deliberately still NOT part of this — decided against for
+# now (see README). Adding it later is just a [[d1_databases]] block here.

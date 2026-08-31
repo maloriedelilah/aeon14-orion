@@ -1,0 +1,866 @@
+/* author-geo BASE STYLING -- upstream-owned. TIER 3 (THEMING.md): this file
+ * is NOT overridable/shadowable and is never meant to be hand-edited by an
+ * implementer -- pull upstream improvements to it via `git pull upstream
+ * main`, same as src/lib/jsonld.ts and src/pages/*. It exists as a single,
+ * un-shadowed file (there is no @theme alias for stylesheets pointed at it)
+ * precisely so upstream can keep evolving structural/layout CSS here with
+ * zero conflict risk against an implementer's customizations, which live in:
+ *   - src/styles/theme.css              (Tier 1 -- tokens only)
+ *   - src/overrides/styles/site.css     (Tier B -- free-form CSS, optional)
+ *   - src/overrides/**                  (Tier 2 -- component/layout shadows)
+ * See THEMING.md for the full picture and the CSS load order.
+ *
+ * Resets, layout structure, and every component's visual rules. An
+ * implementer should never need to edit this file directly: every color,
+ * font, and spacing value that's meant to be themeable is expressed as a
+ * `var(--token)` consumed from theme.css (imported after this file, so its
+ * token values win by cascade order). To re-skin the site, edit
+ * src/styles/theme.css instead.
+ *
+ * To change LAYOUT/MARKUP rather than tokens (e.g. restyle .book-card's
+ * structure), use the selective override layer instead of editing this
+ * file directly -- see src/overrides/README.md. Component .astro files are
+ * imported through the `@theme/...` alias, so an implementer can shadow
+ * just the ones they want to change in src/overrides/, leaving this file
+ * (and every component they don't touch) exactly as upstream ships it --
+ * which is what keeps `git pull upstream main` conflict-free.
+ *
+ * Have structural/layout CSS that ISN'T a token and doesn't belong in
+ * theme.css (which is tokens-ONLY)? Don't add it here either -- put it in
+ * the optional, implementer-owned src/overrides/styles/site.css instead,
+ * which loads after this file AND theme.css. See THEMING.md's "Tier B" and
+ * src/overrides/styles/README.md.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Standard sr-only pattern: content stays in the accessibility tree (screen
+   readers, the page's heading outline) but is visually removed. Used for the
+   homepage's <h1> — its sections already carry their own visible headings
+   (Latest release/Coming soon eyebrow text, "Series", "About <name>"), so a
+   *visible* second "Site Name" heading above them would be redundant, but the
+   page still needs exactly one real <h1> for a correct heading outline. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  /* Promoted to a token (--font-heading, theme.css) so an implementer can
+     change the heading typeface without editing this upstream-owned file --
+     see theme.css's header comment. Default value is byte-identical to the
+     literal this replaced, so this is a pure refactor with no visual change. */
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  margin: 0 0 0.5em;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* --- Layout shell -------------------------------------------------------- */
+
+.site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+main.wrap {
+  flex: 1;
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* --- Header ---------------------------------------------------------------- */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.site-header .brand {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-header .brand:hover,
+.site-header .brand:focus-visible {
+  text-decoration: none;
+}
+
+.site-header .wordmark {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.site-header .brand:hover .wordmark,
+.site-header .brand:focus-visible .wordmark {
+  color: var(--accent);
+}
+
+.site-header .brand-logo {
+  max-height: 48px;
+  width: auto;
+  display: block;
+}
+
+/* 'left' (default): brand left, nav right, one row. */
+.site-header--left .wrap {
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+/* 'centered': brand centered on its own row, nav centered underneath. */
+.site-header--centered .wrap {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.site-nav {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.site-nav a {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: var(--accent);
+}
+
+/* --- Footer ---------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.site-footer .wrap {
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.site-footer .tagline {
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-links a {
+  color: var(--text-muted);
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--accent);
+}
+
+.footer-social {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.copyright {
+  margin: 0;
+}
+
+/* --- Content patterns used across pages ------------------------------------ */
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  /* Extra separation from the page background beyond the border alone —
+     previously unset here (only .card img/.cover had a shadow). */
+  box-shadow: var(--shadow);
+}
+
+.card img,
+.cover {
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  /* Cap it — source cover art is print-resolution and was rendering as a
+     "monster" full-width image with nothing capping its display height. */
+  max-height: 400px;
+  width: auto;
+}
+
+section + section {
+  margin-top: 2.5rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-top: -0.5em;
+}
+
+.legal-updated {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* --- 404 page ------------------------------------------------------------- */
+
+.not-found {
+  padding: 2rem 0 3rem;
+  text-align: center;
+}
+
+.not-found p {
+  color: var(--text-muted);
+}
+
+/* --- Book cards (cover + title/blurb side by side) ------------------------- */
+/* Used on the homepage's featured-book card and the book detail page's hero.
+   Cover on the left (capped via .cover above), title/description to the
+   right; folds to a single stacked column on narrow screens. */
+
+.book-card {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.book-card .cover-link {
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Book detail page only: cover + its release date, stacked, sitting to the
+   left of the title/blurb/get-the-book column. (The homepage/listing cards
+   use a bare .cover-link with no caption, so this is scoped to book-card's
+   own cover wrapper rather than added to .cover-link generally.) */
+.book-card .cover-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.release-date {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+  text-align: center;
+}
+
+.series-info {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: -0.4em 0 0.75em;
+}
+
+/* "Get the book" (editions) is nested inside .book-card-body now, so it sits
+   under the blurb/byline to the right of the cover rather than below the
+   whole card. Its own class per request, and explicit spacing since the
+   generic "section + section" rule only fires between adjacent <section>
+   siblings, which this no longer is (its previous sibling is a <p>). */
+.get-book-section {
+  margin-top: 1.5rem;
+}
+
+/* "If you like..." (comps) stays below the whole book-card, but that's a
+   <div> not a <section>, so it also needs explicit spacing rather than
+   relying on the adjacent-section rule. */
+.comps-section {
+  margin-top: 2.5rem;
+}
+
+/* "Featured in" (themed hubs this book belongs to) sits below "If you like...".
+   Explicit margin for the same reason as .comps-section above: CompsBlock only
+   renders its <section> when comps.length > 0, so this can't always rely on
+   the generic "section + section" sibling rule having a <section> immediately
+   before it. */
+.hubs-section {
+  margin-top: 2.5rem;
+}
+
+.book-card .book-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-card .book-card-body > :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .book-card {
+    flex-direction: column;
+  }
+
+  .book-card .cover {
+    max-height: 320px;
+  }
+}
+
+/* --- Book listing rows (series index + a series' own book list) ----------- */
+/* BookListItem.astro: thumbnail left, title/Book #/short-blurb+more right;
+   folds to a stacked column on narrow screens, same convention as .book-card. */
+
+.book-thumb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.book-thumb-list li,
+.book-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.book-list-item .book-list-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-list-item .book-list-item-body > :first-child {
+  margin-top: 0;
+}
+
+.book-number {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: -0.3em 0 0.5em;
+}
+
+/* BookListItem's short per-book blurb — deliberately its OWN class (not
+   reusing .series-description below) so a series' own description and a
+   listed book's teaser blurb can be sized/styled independently. ~25% smaller
+   than body text, since it's secondary teaser copy next to a small thumbnail. */
+.book-blurb {
+  font-size: 0.75rem;
+}
+
+/* The series' own description text, wherever a series is introduced (series
+   index cards, a series' own detail page, the homepage's series teaser) —
+   kept as its own class distinct from .book-blurb above for the same reason. */
+.series-description {
+  margin: 0 0 0.75em;
+}
+
+/* Higher specificity than ".card img" (which the series-list <section class="card">
+   wrapper otherwise matches at equal-or-higher specificity, silently overriding this
+   150px cap with the .cover rule's 400px) — scope to the list wrapper so this wins
+   regardless of source order. */
+.book-thumb-list .book-thumb {
+  flex-shrink: 0;
+  max-height: 150px;
+  width: auto;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 560px) {
+  .book-thumb-list li,
+  .book-list-item {
+    flex-direction: column;
+  }
+}
+
+/* --- Homepage series teaser (text left, overlapping cover fan right) ------- */
+/* index.astro's "Series" section: each series' blurb/book-list on the left,
+   a small overlapping "fan" of its first 3 covers on the right — decorative
+   only (aria-hidden; the book list to the left already carries the real
+   links), so it's fine if a series has fewer than 3 books. Folds to a single
+   stacked column on narrow screens, same convention as .book-card. */
+
+.series-card {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.series-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.series-card-body > :first-child {
+  margin-top: 0;
+}
+
+.series-covers-stack {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.stacked-cover {
+  position: relative;
+  max-height: 120px;
+  width: auto;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  border: 3px solid var(--bg-elevated);
+}
+
+.stacked-cover + .stacked-cover {
+  margin-left: -2.75rem;
+}
+
+@media (max-width: 640px) {
+  .series-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .series-covers-stack {
+    margin-top: 1rem;
+  }
+}
+
+/* --- Author card (photo + bio side by side) -------------------------------- */
+/* Used on the homepage's "About the author" teaser and the About page's own
+   per-author section. Same cover-left/body-right convention as .book-card. */
+
+.author-card {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.author-photo {
+  flex-shrink: 0;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  max-height: 220px;
+  width: auto;
+}
+
+.author-card .author-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-card .author-card-body > :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .author-card {
+    flex-direction: column;
+  }
+
+  .author-photo {
+    max-height: 200px;
+  }
+}
+
+/* --- Site slogan (homepage, above "Latest release") ------------------------ */
+
+.site-slogan {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  margin: 0 0 2rem;
+}
+
+/* --- Breadcrumbs ------------------------------------------------------------ */
+
+.breadcrumbs {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.breadcrumbs .wrap:empty {
+  display: none;
+}
+
+.breadcrumbs .wrap:not(:empty) {
+  padding-top: 0.75rem;
+}
+
+.breadcrumbs a {
+  color: var(--text-muted);
+}
+
+.breadcrumbs a:hover,
+.breadcrumbs a:focus-visible {
+  color: var(--accent);
+}
+
+.breadcrumbs .sep {
+  margin: 0 0.4em;
+  opacity: 0.6;
+}
+
+@media (max-width: 560px) {
+  .site-header--left .wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* --- Pre-order badge --------------------------------------------------- */
+/* Used anywhere a book's title appears and it's still upcoming (see lib/date.ts
+   isFutureRelease) — series listings (BookListItem), the book detail page's
+   own <h1>, the homepage's per-series book list, and the hero slideshow's
+   "Coming soon" slides. A fixed warning-style color rather than --accent, on
+   purpose: it needs to read as its own distinct signal regardless of which
+   theme/accent an author picks, not blend in as "just another link color".
+   Still expressed as a token (--preorder-badge-color, defaulted here) rather
+   than a bare hex value, so an implementer who really does want to retint it
+   can, by setting --preorder-badge-color in theme.css — that file loads
+   after this one, so its value wins by cascade order without editing this
+   file. */
+:root {
+  --preorder-badge-color: #e2a83a;
+}
+
+.preorder-badge {
+  display: inline-block;
+  margin-left: 0.6em;
+  padding: 0.15em 0.55em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--preorder-badge-color);
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* --- Hero slideshow (homepage) ------------------------------------------- */
+/* HeroSlideshow.astro: slide 0 (Latest release, or the soonest Coming soon
+   book if nothing's released yet) is visible with zero JS — the .hero-slide/
+   .is-active rules below are what the component's <script> toggles to
+   rotate. Reuses .card/.book-card for the slide's own layout (cover left,
+   title/blurb right, folds to a column on mobile) so a slide looks exactly
+   like the old static "Latest release" card did. */
+
+.hero-slideshow {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+
+.hero-slide {
+  display: none;
+}
+
+.hero-slide.is-active {
+  display: flex;
+}
+
+.hero-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 0.35em;
+}
+
+.hero-arrow {
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  width: 2.25rem;
+  height: 2.25rem;
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+
+.hero-arrow:hover,
+.hero-arrow:focus-visible {
+  color: var(--accent);
+}
+
+.hero-arrow-prev {
+  left: -0.75rem;
+}
+
+.hero-arrow-next {
+  right: -0.75rem;
+}
+
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.hero-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.hero-dot.is-active {
+  background: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .hero-arrow-prev {
+    left: 0.25rem;
+  }
+
+  .hero-arrow-next {
+    right: 0.25rem;
+  }
+}
+
+/* --- Coming soon row (homepage) ------------------------------------------ */
+/* ComingSoonRow.astro: native overflow-x scroll works with zero JS; the
+   arrow buttons are `hidden` in the markup by default and only revealed by
+   the component's own <script> once it confirms the row actually overflows
+   its viewport, per "if it is wider than the page, then there are scroll
+   arrows" — so an author with 1-2 upcoming books never sees dead arrows. */
+
+.coming-soon-viewport {
+  position: relative;
+}
+
+.coming-soon-row {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.25rem 0.75rem;
+  scrollbar-width: thin;
+}
+
+.coming-soon-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: 11rem;
+}
+
+.coming-soon-cover {
+  max-height: 200px;
+  width: auto;
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+.coming-soon-item h3 {
+  font-size: 1rem;
+  margin: 0.6em 0 0.2em;
+}
+
+.coming-soon-arrow {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  width: 2.25rem;
+  height: 2.25rem;
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  box-shadow: var(--shadow);
+}
+
+.coming-soon-arrow:hover,
+.coming-soon-arrow:focus-visible {
+  color: var(--accent);
+}
+
+.coming-soon-arrow-prev {
+  left: -0.75rem;
+}
+
+.coming-soon-arrow-next {
+  right: -0.75rem;
+}
+
+/* --- Contact / Subscribe forms -------------------------------------------- */
+/* Neither component ships with layout CSS of its own beyond hiding the
+   honeypot — without this, labels/inputs render with browser-default inline
+   flow (fields crammed onto one line, textarea floating wherever it lands)
+   and the submit button is completely unstyled. This stacks fields
+   vertically with real spacing and reuses the site's existing tokens/visual
+   language (rounded corners matching .card, var(--accent) for the primary
+   action) rather than inventing a new one. */
+
+.contact-form,
+.subscribe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 32rem;
+  margin-top: 1rem;
+}
+
+.contact-form label,
+.subscribe-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.contact-form input,
+.contact-form textarea,
+.subscribe-form input,
+.subscribe-form textarea {
+  font: inherit;
+  font-weight: normal;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.contact-form input:focus-visible,
+.contact-form textarea:focus-visible,
+.subscribe-form input:focus-visible,
+.subscribe-form textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.contact-form textarea {
+  resize: vertical;
+}
+
+.contact-form .cf-turnstile {
+  margin-top: 0.25rem;
+}
+
+.contact-form button[type='submit'],
+.subscribe-form button[type='submit'] {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1.5rem;
+  margin-top: 0.25rem;
+  cursor: pointer;
+}
+
+.contact-form button[type='submit']:hover,
+.subscribe-form button[type='submit']:hover {
+  filter: brightness(1.08);
+}
+
+.contact-form button[type='submit']:focus-visible,
+.subscribe-form button[type='submit']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.contact-form__status,
+.subscribe-form__status {
+  margin: 0;
+  color: var(--text-muted);
+}
+

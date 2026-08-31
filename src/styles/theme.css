@@ -1,0 +1,63 @@
+/* author-geo THEME TOKENS -- implementer-owned.
+ *
+ * This file is the ONE place an implementer edits to re-skin the site:
+ * colors, fonts, spacing -- anything expressed as a CSS custom property
+ * (--token) consumed by base.css. It intentionally contains ONLY
+ * `:root` custom-property declarations (the two built-in dark/light
+ * palettes below, selected by `[data-theme="dark"|"light"]` on <html>,
+ * itself set from siteConfig.theme.mode in Base.astro) -- no component
+ * rules live here.
+ *
+ * Recoloring/refonting/respacing the whole site is then just editing the
+ * values below. Base.astro imports base.css FIRST and this file LAST, so
+ * cascade order means any token re-declared here (in a plain `:root {}`
+ * block, or inside these `[data-theme=...]` blocks) always wins over
+ * base.css's defaults -- you never need to touch base.css to retheme.
+ *
+ * An optional accent override is ALSO applied inline by Base.astro as a
+ * `--accent` custom property from siteConfig, so an author can retint
+ * without even touching this file -- that inline `<style>` block loads
+ * after this file too, so it wins over whatever's set here.
+ *
+ * Not every token is theme-dependent -- a token whose value doesn't change
+ * between dark/light (e.g. a font choice) belongs in a plain `:root { }`
+ * block instead of duplicating it into both `[data-theme=...]` blocks below.
+ * `--font-heading` is the first example of this.
+ */
+
+:root {
+  /* Headings font (h1-h4 in base.css). Same stack on every page regardless
+     of theme.mode -- promoted from a literal that used to be hardcoded
+     directly in base.css. Default value here is byte-identical to that
+     literal, so promoting it changed nothing about how the site looks. */
+  --font-heading: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0e14;
+  /* Was #12161f — only ~3-4% lighter than --bg, so any "elevated" surface
+     (.card, and the contact/subscribe forms living inside one) was nearly
+     indistinguishable from the page background. Bumped to a clearly
+     lighter surface tone while keeping the same blue-black hue. */
+  --bg-elevated: #1b2233;
+  --text: #e8eaf0;
+  --text-muted: #9aa3b5;
+  --accent: #5fd3ff;
+  --accent-contrast: #04141a;
+  /* Bumped alongside --bg-elevated for the same reason — a border that's
+     only marginally lighter than the surface it's outlining doesn't read as
+     an edge. */
+  --border: #323a52;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] {
+  --bg: #fbfaf7;
+  --bg-elevated: #ffffff;
+  --text: #1b1f27;
+  --text-muted: #5b6472;
+  --accent: #1c5cff;
+  --accent-contrast: #ffffff;
+  --border: #e3e1da;
+  --shadow: 0 8px 24px rgba(20, 20, 20, 0.08);
+}

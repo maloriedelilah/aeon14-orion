@@ -12,3 +12,9 @@ dist/
 .DS_Store
 *.log
 .vscode/
+# cover art — fetched at build time from scripts/cover-manifest.json by
+# scripts/fetch-covers.mjs (build command runs it before `astro build`).
+# Never committed, so the repo stays text-only and pushable by any connector.
+src/content/**/cover.jpg
+src/content/**/*-cover.jpg
+src/content/author/photo.jpg

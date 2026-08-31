@@ -476,7 +476,16 @@ section + section {
   flex-shrink: 0;
 }
 
-.stacked-cover {
+/* Higher specificity than ".card img" (which the series-card's own `.card`
+   wrapper otherwise matches at equal-or-higher specificity, silently
+   overriding this 120px cap with the .cover rule's 400px) — scope to the
+   covers-stack wrapper so this wins regardless of source order. Same fix as
+   .book-thumb-list .book-thumb above (see its comment); this one was just
+   missed when that fix went in. Without it the three overlapping covers
+   render at full 400px height and overflow their flex sibling
+   (.series-card-body) so badly the description text collapses to a
+   one-word-per-line column next to them. */
+.series-covers-stack .stacked-cover {
   position: relative;
   max-height: 120px;
   width: auto;
@@ -863,4 +872,3 @@ section + section {
   margin: 0;
   color: var(--text-muted);
 }
-
